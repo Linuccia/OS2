@@ -11,7 +11,7 @@ int main( int argc, char *argv[] ) {
     FILE *vma_file = fopen(DEBUGFS_VMA_FILE_PATH, "r");
     FILE *vma_arg_file = fopen(DEBUGFS_VMA_ARG_FILE_PATH, "w");
     FILE *vfs_file = fopen(DEBUGFS_VFS_FILE_PATH, "r");
-    if ( !vma_file || !vfs_file ) {
+    if ( !vma_file || !vfs_file || !vma_arg_file ) {
         printf("Cannot open files for debugfs driver\n");
         return -1;
     }

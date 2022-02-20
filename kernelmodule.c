@@ -2,17 +2,18 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/mm_types.h>
-#include <linux/mm.h>
+#include <linux/sched/mm.h>
 #include <linux/pid.h>
 #include <linux/sched.h>
 #include <linux/mount.h>
+#include <linux/vmalloc.h>
 #include <linux/fs.h>
 #include <linux/debugfs.h>
 #include "kernelmodule.h"
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Polina Stephanskaya");
-MODULE_DESCRIPTION("Kernel module for getting vm_area_struct and vfsmount structs informatipn via debugfs driver");
+MODULE_DESCRIPTION("Kernel module for getting vm_area_struct and vfsmount structs information via debugfs driver");
 MODULE_VERSION("1.0");
 
 /* debugfs directory and files */
@@ -29,10 +30,14 @@ static struct vfsmount *vfs;
 static char buffer_k[BUFFER_SIZE] = {NULL};
 static bool init_error = false;
 
+/* function for getting task_struct */
+static struct task_struct * get_ts( pid_t nr ) {
+    return get_pid_task(find_get_pid(nr), PIDTYPE_PID);
+}
+
 /* function for getting vm_area_struct */
-static struct vm_area_struct * get_vma( pid_t nr ) {
-    struct task_struct *ts = get_pid_task(find_get_pid(nr), PIDTYPE_PID);
-    struct mm_struct *mm = ts->mm;
+static struct vm_area_struct * get_vma( struct task_struct *ts ) {
+    struct mm_struct *mm = get_task_mm(ts);
     struct vm_area_struct *vma = mm->mmap;
     return vma;
 }
@@ -59,13 +64,20 @@ static ssize_t vma_to_user(struct file *filp, char __user *buff, size_t count, l
         sprintf(buffer_k, KERNEL_ERROR_MSG);
     } else {
         printk(KERN_INFO "Trying to get vm_area_struct\n");
-        vma = get_vma(pid_num);
-        if ( vma == NULL ) {
-            printk(KERN_WARNING "Cannot get vm_area_struct\n");
+        struct task_struct *ts = get_ts(pid_num);
+        if ( ts == NULL) {
+            printk(KERN_WARNING "Wring PID\n");
             sprintf(buffer_k, KERNEL_ERROR_MSG);
         } else {
-            sprintf(buffer_k, "vm_start = %d\nvm_end = %d\nvm_flags = %d\n", vma->vm_start, vma->vm_end, vma->vm_flags);
+            vma = get_vma(ts);
+            if ( vma == NULL ) {
+                printk(KERN_WARNING "Cannot get vm_area_struct\n");
+                sprintf(buffer_k, KERNEL_ERROR_MSG);
+            } else {
+                sprintf(buffer_k, "vm_start = %d\nvm_end = %d\nvm_flags = %d\n", vma->vm_start, vma->vm_end, vma->vm_flags);
+            }   
         }
+        
     }
     to_user(buff, count, fpos);
     return *fpos;
