@@ -8,7 +8,8 @@ static void print_program_usage() {
 }
 
 int main( int argc, char *argv[] ) {
-    FILE *vma_file = fopen(DEBUGFS_VMA_FILE_PATH, "r+");
+    FILE *vma_file = fopen(DEBUGFS_VMA_FILE_PATH, "r");
+    FILE *vma_arg_file = fopen(DEBUGFS_VMA_ARG_FILE_PATH, "w");
     FILE *vfs_file = fopen(DEBUGFS_VFS_FILE_PATH, "r");
     if ( !vma_file || !vfs_file ) {
         printf("Cannot open files for debugfs driver\n");
@@ -20,19 +21,21 @@ int main( int argc, char *argv[] ) {
     }
     char *line = NULL;
     size_t length = 0;
-    if ( strcmp(agrv[1], "-vma") != 0 ) {
+    if ( strcmp(argv[1], "-vma") == 0 ) {
         if ( !isdigit(argv[2]) ) {
             printf("<PID> arg must be decimal\n");
             return -1;
         }
         printf("Sending your PID to kernel module...\n");
-        fprintf(vma_file, "%d", argv[2]);
-        printf("Getting vm_area_struct information from kernel module...\n ")
+        char buf[256];
+        sprintf(buf, "%d", argv[2]);
+        fwrite(&buf, 1, sizeof(buf), vma_arg_file);
+        printf("Getting vm_area_struct information from kernel module...\n ");
         while (getline(&line, &length, vma_file) != -1) {
             printf("%s", line);
         }
-    } else if ( strcmp(agrv[1], "-vfs") != 0 ) {
-        printf("Getting vfsmount struct information from kernel module...\n ")
+    } else if ( strcmp(argv[1], "-vfs") == 0 ) {
+        printf("Getting vfsmount struct information from kernel module...\n ");
         while (getline(&line, &length, vfs_file) != -1) {
             printf("%s", line);
         }
@@ -42,6 +45,7 @@ int main( int argc, char *argv[] ) {
     }
     fclose(vma_file);
     fclose(vfs_file);
+    fclose(vma_arg_file);
 
     return 0;
 }
