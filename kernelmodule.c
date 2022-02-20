@@ -66,7 +66,7 @@ static ssize_t vma_to_user(struct file *filp, char __user *buff, size_t count, l
         printk(KERN_INFO "Trying to get vm_area_struct\n");
         struct task_struct *ts = get_ts(pid_num);
         if ( ts == NULL) {
-            printk(KERN_WARNING "Wring PID\n");
+            printk(KERN_WARNING "Wrong PID\n");
             sprintf(buffer_k, KERNEL_ERROR_MSG);
         } else {
             vma = get_vma(ts);
@@ -96,6 +96,10 @@ static ssize_t pid_from_user(struct file *filp, const char __user *buff, size_t 
     }
     printk(KERN_INFO "Trying to get PID from user...\n");
     copy_from_user(buffer_k, buff, count);
+    if ( kstrtoint(buffer_k, 10, &pid_num) != 0 ) {
+        printk(KERN_WARNING "PID is not decimal\n");
+        return -EFAULT;
+    }
     if ( sscanf(buffer_k, "%d", &pid_num) < 1 ) {
     	printk(KERN_WARNING "Cannot read PID properly\n");
     	return -EFAULT;

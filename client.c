@@ -22,13 +22,9 @@ int main( int argc, char *argv[] ) {
     char *line = NULL;
     size_t length = 0;
     if ( strcmp(argv[1], "-vma") == 0 ) {
-        if ( !isdigit(argv[2]) ) {
-            printf("<PID> arg must be decimal\n");
-            return -1;
-        }
         printf("Sending your PID to kernel module...\n");
         char buf[256];
-        sprintf(buf, "%d", argv[2]);
+        sprintf(buf, "%s", argv[2]);
         fwrite(&buf, 1, sizeof(buf), vma_arg_file);
         printf("Getting vm_area_struct information from kernel module...\n ");
         while (getline(&line, &length, vma_file) != -1) {
