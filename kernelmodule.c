@@ -3,12 +3,11 @@
 #include <linux/module.h>
 #include <linux/mm_types.h>
 #include <linux/mm.h>
-#include <kernel/fork.c>
 #include <linux/pid.h>
 #include <linux/sched.h>
 #include <linux/mount.h>
 #include <linux/fs.h>
-#include "kernel.h"
+#include "kernelmodule.h"
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Polina Stephanskaya");
@@ -38,7 +37,7 @@ static struct vm_area_struct get_vma( pid_t nr ) {
 
 /* function for getting vm_area_struct */
 static struct vfsmount get_vfs() {
-    struct vfs_mount *vfs = kern_mount(get_fs_type("bdev"));
+    struct vfsmount *vfs = kern_mount(get_fs_type("bdev"));
     return *vfs;
 }
 
@@ -59,7 +58,7 @@ static ssize_t vma_to_user(struct file *filp, char __user *buff, size_t count, l
     } else {
         printk(KERN_INFO "Trying to get vm_area_struct\n");
         vma = get_vma(pid_num);
-        if ( !vma ) {
+        if ( vma == NULL ) {
             printk(KERN_WARNING "Cannot get vm_area_struct\n");
             sprintf(buffer_k, KERNEL_ERROR_MSG);
         } else {
@@ -95,7 +94,7 @@ static ssize_t vfs_to_user( struct file *filp, char __user *buff, size_t count, 
         sprintf(buffer_k, KERNEL_ERROR_MSG);
     } else {
         vfs = get_vfs();
-        if ( !vfs ) {
+        if ( vfs == NULL ) {
             printk(KERN_WARNING "Cannot get vfsmount struct\n");
             sprintf(buffer_k, KERNEL_ERROR_MSG);
         } else {
